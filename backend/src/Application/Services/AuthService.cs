@@ -23,9 +23,9 @@ public class AuthService : IAuthService
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
         var user = new User(email, passwordHash);
-        
+
         await _userRepository.AddAsync(user);
-        
+
         var token = GenerateSimpleToken(user);
         return Result<AuthResponse>.Success(new AuthResponse { Token = token });
     }
@@ -33,7 +33,7 @@ public class AuthService : IAuthService
     public async Task<Result<AuthResponse>> LoginAsync(string email, string password)
     {
         Console.WriteLine($"[DEBUG] LoginAsync - Attempting login for: {email}");
-        
+
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null)
         {
@@ -44,10 +44,10 @@ public class AuthService : IAuthService
         Console.WriteLine($"[DEBUG] LoginAsync - User found, verifying password...");
         Console.WriteLine($"[DEBUG] LoginAsync - Input password: {password}");
         Console.WriteLine($"[DEBUG] LoginAsync - Stored hash: {user.PasswordHash[..10]}...");
-        
+
         var passwordValid = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
         Console.WriteLine($"[DEBUG] LoginAsync - Password verification result: {passwordValid}");
-        
+
         if (!passwordValid)
         {
             return Result<AuthResponse>.Failure("Invalid email or password");
@@ -68,13 +68,13 @@ public class AuthService : IAuthService
 
         var resetToken = Guid.NewGuid().ToString();
         var expiry = DateTime.UtcNow.AddHours(1); // 1小時後過期
-        
+
         user.SetResetToken(resetToken, expiry);
         await _userRepository.UpdateAsync(user);
 
         // 曳光彈階段：在此輸出重設連結，實際應該發送 Email
         Console.WriteLine($"Reset link: /reset-password?token={resetToken}");
-        
+
         return Result.Success();
     }
 
@@ -88,9 +88,9 @@ public class AuthService : IAuthService
 
         var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         user.UpdatePassword(newPasswordHash);
-        
+
         await _userRepository.UpdateAsync(user);
-        
+
         return Result.Success();
     }
 

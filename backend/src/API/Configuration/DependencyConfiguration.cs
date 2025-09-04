@@ -9,7 +9,7 @@ public class UserRepositoryConfiguration
 {
     public string Lifetime { get; set; } = "Scoped";
     public string Comment { get; set; } = string.Empty;
-    
+
     public ServiceLifetime GetServiceLifetime()
     {
         return Lifetime.ToLowerInvariant() switch

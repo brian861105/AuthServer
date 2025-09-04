@@ -11,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Configure dependency settings
-var dependencyConfig = builder.Configuration.GetSection("Dependencies").Get<DependencyConfiguration>() 
+var dependencyConfig = builder.Configuration.GetSection("Dependencies").Get<DependencyConfiguration>()
                       ?? new DependencyConfiguration();
 
 // Register dependencies with configurable lifetime

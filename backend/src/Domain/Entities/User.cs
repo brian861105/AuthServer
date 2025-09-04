@@ -38,8 +38,8 @@ public class User
 
     public bool IsResetTokenValid(string token)
     {
-        return ResetToken == token && 
-               ResetTokenExpiry.HasValue && 
+        return ResetToken == token &&
+               ResetTokenExpiry.HasValue &&
                ResetTokenExpiry > DateTime.UtcNow;
     }
 }
