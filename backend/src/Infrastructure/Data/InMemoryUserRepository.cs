@@ -16,7 +16,7 @@ public class InMemoryUserRepository : IUserRepository
         {
             Console.WriteLine($"[DEBUG] GetByEmailAsync - User: {u.Email}, PasswordHash: {u.PasswordHash[..10]}...");
         }
-        
+
         var user = _users.FirstOrDefault(u => u.Email == email);
         Console.WriteLine($"[DEBUG] GetByEmailAsync - Found user: {user != null}");
         return Task.FromResult(user);
@@ -44,14 +44,14 @@ public class InMemoryUserRepository : IUserRepository
     {
         Console.WriteLine($"[DEBUG] AddAsync - Adding user: {user.Email}");
         Console.WriteLine($"[DEBUG] AddAsync - PasswordHash: {user.PasswordHash[..10]}...");
-        
+
         // 建立新的 User 實例，並設置 ID
         var newUser = new User(user.Email, user.PasswordHash);
         SetUserId(newUser, _nextId++);
-        
+
         _users.Add(newUser);
         Console.WriteLine($"[DEBUG] AddAsync - Total users after add: {_users.Count}");
-        
+
         return Task.FromResult(newUser);
     }
 
