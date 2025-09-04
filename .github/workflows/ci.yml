@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: [ 'doc/*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore backend/AuthServer.sln
+    
+    - name: Build solution
+      run: dotnet build backend/AuthServer.sln --configuration Release --no-restore
+    
+    - name: Run tests
+      run: dotnet test backend/AuthServer.sln --configuration Release --no-build --verbosity normal
+
+  lint:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Install dotnet format
+      run: dotnet tool install -g dotnet-format
+    
+    - name: Check code formatting
+      run: dotnet format backend/AuthServer.sln --verify-no-changes --verbosity diagnostic
