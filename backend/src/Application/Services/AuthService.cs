@@ -8,14 +8,31 @@ namespace AuthServer.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IValidationService _validationService;
+    private readonly ITokenService _tokenService;
 
-    public AuthService(IUserRepository userRepository)
+    public AuthService(IUserRepository userRepository, IValidationService validationService, ITokenService tokenService)
     {
         _userRepository = userRepository;
+        _validationService = validationService;
+        _tokenService = tokenService;
     }
 
     public async Task<Result<AuthResponse>> RegisterAsync(string email, string password)
     {
+        // 🟢 綠燈階段：使用驗證服務
+        var emailValidation = _validationService.ValidateEmail(email);
+        if (!emailValidation.IsValid)
+        {
+            return Result<AuthResponse>.Failure(emailValidation.Error);
+        }
+
+        var passwordValidation = _validationService.ValidatePassword(password);
+        if (!passwordValidation.IsValid)
+        {
+            return Result<AuthResponse>.Failure(passwordValidation.Error);
+        }
+
         if (await _userRepository.ExistsByEmailAsync(email))
         {
             return Result<AuthResponse>.Failure("Email already exists");
@@ -26,7 +43,8 @@ public class AuthService : IAuthService
 
         await _userRepository.AddAsync(user);
 
-        var token = GenerateSimpleToken(user);
+        // 🟢 使用 JWT Token 服務
+        var token = _tokenService.GenerateToken(user);
         return Result<AuthResponse>.Success(new AuthResponse { Token = token });
     }
 
@@ -53,7 +71,7 @@ public class AuthService : IAuthService
             return Result<AuthResponse>.Failure("Invalid email or password");
         }
 
-        var token = GenerateSimpleToken(user);
+        var token = _tokenService.GenerateToken(user);
         return Result<AuthResponse>.Success(new AuthResponse { Token = token });
     }
 
@@ -94,10 +112,4 @@ public class AuthService : IAuthService
         return Result.Success();
     }
 
-    private string GenerateSimpleToken(User user)
-    {
-        // 曳光彈階段：最簡單的 token 生成
-        var payload = $"{user.Id}:{user.Email}:{DateTime.UtcNow.AddDays(1):O}";
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(payload));
-    }
 }

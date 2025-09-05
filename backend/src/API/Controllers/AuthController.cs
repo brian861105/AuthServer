@@ -1,5 +1,6 @@
 using AuthServer.Application.DTOs;
 using AuthServer.Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthServer.API.Controllers;
@@ -65,5 +66,21 @@ public class AuthController : ControllerBase
         }
 
         return Ok(new { message = "Password reset successfully" });
+    }
+
+    [HttpGet("validate-token")]
+    [Authorize]
+    public IActionResult ValidateToken()
+    {
+        var userId = User.FindFirst("nameid")?.Value;
+        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+
+        return Ok(new
+        {
+            isValid = true,
+            userId = userId,
+            email = email,
+            message = "Token is valid"
+        });
     }
 }
