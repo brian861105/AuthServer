@@ -9,7 +9,7 @@ Controllers (API) → Use Cases (Application) → Entities (Domain) → Database
 
 ### 專案結構
 ```
-AuthServer/
+backend/
 ├── src/
 │   ├── Domain/         # 實體、值物件、介面
 │   ├── Application/    # 用例、服務
@@ -216,22 +216,25 @@ public class User : Entity
 }
 ```
 
-### 結果模式
-```csharp
-public class Result<T>
-{
-    public bool IsSuccess { get; }
-    public T? Value { get; }
-    public string Error { get; }
-    
-    public static Result<T> Success(T value) => new(true, value, string.Empty);
-    public static Result<T> Failure(string error) => new(false, default, error);
-}
-```
 
-### TDD 驅動的開發順序 ⚠️ **必須遵循**
+### 🚨 TDD 驅動開發 - 最高優先級原則 ⚠️ **必須遵循**
 
-🔴 **紅燈 → 🟢 綠燈 → 🔵 重構** - 這是鐵律！
+🔴 **RED → 🟢 GREEN → 🔵 REFACTOR** - 這是鐵律！
+
+#### 核心原則
+- **🔴 RED**: 先寫失敗測試再寫實作（沒有例外！）
+- **🟢 GREEN**: 只寫讓測試通過的最小代碼
+- **🔵 REFACTOR**: 測試通過後才能重構
+- **📝 DOCUMENT**: 測試即規格，測試即文檔
+- **⚡ FAST**: 快速的反饋循環（秒級執行）
+
+#### ⛔ TDD 禁止事項
+- ❌ 沒有測試就寫產品代碼
+- ❌ 寫通過的測試（測試必須先失敗）
+- ❌ 跳過重構階段
+- ❌ 寫太複雜的測試
+
+#### 實際開發流程
 
 ```csharp
 // 步驟 1: 先寫失敗的測試 (紅燈)
@@ -442,88 +445,6 @@ public async Task<Result<string>> RegisterUserAsync(string email, string passwor
 }
 ```
 
-### 曳光彈開發的優勢
-
-1. **快速驗證**: 早期發現架構問題
-2. **風險降低**: 及早識別技術障礙
-3. **可見進展**: 利害關係人可以看到具體成果
-4. **迭代改進**: 基於反饋持續優化
-
-### 實際應用範例
-
-#### AuthServer 曳光彈規劃
-
-```csharp
-// Phase 1: 曳光彈 - 基本認證流程
-public class AuthServerTracerBullet
-{
-    // 最簡單的登入流程
-    public async Task<string> LoginAsync(string username, string password)
-    {
-        // 硬編碼驗證 - 僅為了打通流程
-        if (username == "admin" && password == "password")
-        {
-            return GenerateSimpleToken(username);
-        }
-        
-        throw new UnauthorizedAccessException("Invalid credentials");
-    }
-    
-    private string GenerateSimpleToken(string username)
-    {
-        // 最簡單的 token 生成
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{DateTime.UtcNow}"));
-    }
-}
-
-// Phase 2: 加入資料庫整合
-public class AuthService : IAuthService
-{
-    public async Task<AuthResult> LoginAsync(LoginRequest request)
-    {
-        var user = await _userRepository.GetByUsernameAsync(request.Username);
-        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
-        {
-            return AuthResult.Failure("Invalid credentials");
-        }
-        
-        var token = _tokenService.GenerateToken(user);
-        return AuthResult.Success(token);
-    }
-}
-
-// Phase 3: 完整實現
-public class AuthService : IAuthService
-{
-    public async Task<AuthResult> LoginAsync(LoginRequest request)
-    {
-        var validationResult = _validator.Validate(request);
-        if (!validationResult.IsValid)
-            return AuthResult.ValidationFailure(validationResult.Errors);
-        
-        var user = await _userRepository.GetByUsernameAsync(request.Username);
-        if (user == null)
-            return AuthResult.Failure("User not found");
-            
-        if (user.IsLocked)
-            return AuthResult.Failure("Account is locked");
-        
-        if (!_passwordService.VerifyPassword(request.Password, user.PasswordHash))
-        {
-            await _userRepository.IncrementFailedLoginAttemptAsync(user.Id);
-            return AuthResult.Failure("Invalid password");
-        }
-        
-        await _userRepository.ResetFailedLoginAttemptAsync(user.Id);
-        var token = await _tokenService.GenerateTokenAsync(user);
-        
-        await _auditService.LogSuccessfulLoginAsync(user.Id, request.IpAddress);
-        
-        return AuthResult.Success(token, user.ToUserInfo());
-    }
-}
-```
-
 ### 曳光彈開發檢查清單
 
 - [ ] 識別最核心的使用場景
@@ -554,18 +475,6 @@ public class AuthService : IAuthService
 - 領域事件處理副作用
 - 通用語言在代碼中體現
 
-### 🚨 TDD - 最高優先級開發原則
-- **🔴 RED**: 先寫失敗測試再寫實作（沒有例外！）
-- **🟢 GREEN**: 只寫讓測試通過的最小代碼
-- **🔵 REFACTOR**: 測試通過後才能重構
-- **📝 DOCUMENT**: 測試即規格，測試即文檔
-- **⚡ FAST**: 快速的反饋循環（秒級執行）
-
-#### ⛔ TDD 禁止事項
-- ❌ 沒有測試就寫產品代碼
-- ❌ 寫通過的測試（測試必須先失敗）
-- ❌ 跳過重構階段
-- ❌ 寫太複雜的測試
 
 ## 測試框架
 
