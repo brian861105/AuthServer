@@ -1,0 +1,206 @@
+using NUnit.Framework;
+using AuthServer.Application.DTOs;
+using AuthServer.Application.Services;
+using AuthServer.Domain.Entities;
+using AuthServer.Domain.Interfaces;
+using Moq;
+
+namespace AuthServer.Application.Tests.Services;
+
+[TestFixture]
+public class AuthServiceTests
+{
+    private Mock<IUserRepository> _mockUserRepository;
+    private AuthService _authService;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _mockUserRepository = new Mock<IUserRepository>();
+        _authService = new AuthService(_mockUserRepository.Object);
+    }
+
+    [Test]
+    public async Task RegisterAsync_WhenEmailNotExists_ShouldReturnSuccess()
+    {
+        // Arrange
+        var request = new RegisterRequest { Email = "test@example.com", Password = "password123" };
+        _mockUserRepository.Setup(x => x.ExistsByEmailAsync(request.Email))
+                          .ReturnsAsync(false);
+        _mockUserRepository.Setup(x => x.AddAsync(It.IsAny<User>()))
+                          .ReturnsAsync((User u) => u);
+
+        // Act
+        var result = await _authService.RegisterAsync(request);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result.Value!.Token, Is.Not.Empty);
+        
+        _mockUserRepository.Verify(x => x.ExistsByEmailAsync(request.Email), Times.Once);
+        _mockUserRepository.Verify(x => x.AddAsync(It.IsAny<User>()), Times.Once);
+    }
+
+    [Test]
+    public async Task RegisterAsync_WhenEmailExists_ShouldReturnFailure()
+    {
+        // Arrange
+        var request = new RegisterRequest { Email = "existing@example.com", Password = "password123" };
+        _mockUserRepository.Setup(x => x.ExistsByEmailAsync(request.Email))
+                          .ReturnsAsync(true);
+
+        // Act
+        var result = await _authService.RegisterAsync(request);
+
+        // Assert
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error, Is.EqualTo("Email already exists"));
+        
+        _mockUserRepository.Verify(x => x.ExistsByEmailAsync(request.Email), Times.Once);
+        _mockUserRepository.Verify(x => x.AddAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Test]
+    public async Task LoginAsync_WhenValidCredentials_ShouldReturnSuccess()
+    {
+        // Arrange
+        var request = new LoginRequest { Email = "test@example.com", Password = "password123" };
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+        var user = new User(request.Email, hashedPassword);
+        
+        _mockUserRepository.Setup(x => x.GetByEmailAsync(request.Email))
+                          .ReturnsAsync(user);
+
+        // Act
+        var result = await _authService.LoginAsync(request);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result.Value!.Token, Is.Not.Empty);
+        
+        _mockUserRepository.Verify(x => x.GetByEmailAsync(request.Email), Times.Once);
+    }
+
+    [Test]
+    public async Task LoginAsync_WhenUserNotExists_ShouldReturnFailure()
+    {
+        // Arrange
+        var request = new LoginRequest { Email = "nonexistent@example.com", Password = "password123" };
+        _mockUserRepository.Setup(x => x.GetByEmailAsync(request.Email))
+                          .ReturnsAsync((User?)null);
+
+        // Act
+        var result = await _authService.LoginAsync(request);
+
+        // Assert
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error, Is.EqualTo("Invalid email or password"));
+        
+        _mockUserRepository.Verify(x => x.GetByEmailAsync(request.Email), Times.Once);
+    }
+
+    [Test]
+    public async Task LoginAsync_WhenInvalidPassword_ShouldReturnFailure()
+    {
+        // Arrange
+        var request = new LoginRequest { Email = "test@example.com", Password = "wrongpassword" };
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword("correctpassword");
+        var user = new User(request.Email, hashedPassword);
+        
+        _mockUserRepository.Setup(x => x.GetByEmailAsync(request.Email))
+                          .ReturnsAsync(user);
+
+        // Act
+        var result = await _authService.LoginAsync(request);
+
+        // Assert
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error, Is.EqualTo("Invalid email or password"));
+        
+        _mockUserRepository.Verify(x => x.GetByEmailAsync(request.Email), Times.Once);
+    }
+
+    [Test]
+    public async Task ForgotPasswordAsync_WhenUserExists_ShouldReturnSuccess()
+    {
+        // Arrange
+        var request = new ForgotPasswordRequest { Email = "test@example.com" };
+        var user = new User(request.Email, "hashedPassword");
+        
+        _mockUserRepository.Setup(x => x.GetByEmailAsync(request.Email))
+                          .ReturnsAsync(user);
+        _mockUserRepository.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+                          .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _authService.ForgotPasswordAsync(request);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.True);
+        
+        _mockUserRepository.Verify(x => x.GetByEmailAsync(request.Email), Times.Once);
+        _mockUserRepository.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Once);
+    }
+
+    [Test]
+    public async Task ForgotPasswordAsync_WhenUserNotExists_ShouldReturnSuccess()
+    {
+        // Arrange - 安全考量：即使用戶不存在也回傳成功
+        var request = new ForgotPasswordRequest { Email = "nonexistent@example.com" };
+        _mockUserRepository.Setup(x => x.GetByEmailAsync(request.Email))
+                          .ReturnsAsync((User?)null);
+
+        // Act
+        var result = await _authService.ForgotPasswordAsync(request);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.True);
+        
+        _mockUserRepository.Verify(x => x.GetByEmailAsync(request.Email), Times.Once);
+        _mockUserRepository.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Test]
+    public async Task ResetPasswordAsync_WhenValidToken_ShouldReturnSuccess()
+    {
+        // Arrange
+        var request = new ResetPasswordRequest { Token = "validtoken", NewPassword = "newpassword123" };
+        var user = new User("test@example.com", "oldhashedpassword");
+        user.SetResetToken(request.Token, DateTime.UtcNow.AddHours(1));
+        
+        _mockUserRepository.Setup(x => x.GetByResetTokenAsync(request.Token))
+                          .ReturnsAsync(user);
+        _mockUserRepository.Setup(x => x.UpdateAsync(It.IsAny<User>()))
+                          .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _authService.ResetPasswordAsync(request);
+
+        // Assert
+        Assert.That(result.IsSuccess, Is.True);
+        
+        _mockUserRepository.Verify(x => x.GetByResetTokenAsync(request.Token), Times.Once);
+        _mockUserRepository.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Once);
+    }
+
+    [Test]
+    public async Task ResetPasswordAsync_WhenInvalidToken_ShouldReturnFailure()
+    {
+        // Arrange
+        var request = new ResetPasswordRequest { Token = "invalidtoken", NewPassword = "newpassword123" };
+        _mockUserRepository.Setup(x => x.GetByResetTokenAsync(request.Token))
+                          .ReturnsAsync((User?)null);
+
+        // Act
+        var result = await _authService.ResetPasswordAsync(request);
+
+        // Assert
+        Assert.That(result.IsFailure, Is.True);
+        Assert.That(result.Error, Is.EqualTo("Invalid or expired reset token"));
+        
+        _mockUserRepository.Verify(x => x.GetByResetTokenAsync(request.Token), Times.Once);
+        _mockUserRepository.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Never);
+    }
+}

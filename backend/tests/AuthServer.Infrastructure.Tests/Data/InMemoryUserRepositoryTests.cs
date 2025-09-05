@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using AuthServer.Domain.Entities;
 using AuthServer.Infrastructure.Data;
 
