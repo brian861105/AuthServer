@@ -15,6 +15,28 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 
+// Add Problem Details service for error handling
+builder.Services.AddProblemDetails(configure =>
+{
+    configure.CustomizeProblemDetails = context =>
+    {
+        // Always add trace ID for debugging in all environments
+        if (!context.ProblemDetails.Extensions.ContainsKey("traceId"))
+        {
+            context.ProblemDetails.Extensions.Add("traceId", context.HttpContext.TraceIdentifier);
+        }
+        
+        // Set instance to the request path
+        context.ProblemDetails.Instance = context.HttpContext.Request.Path;
+        
+        // Include stack trace only in development environment
+        if (builder.Environment.IsDevelopment() && context.Exception != null)
+        {
+            context.ProblemDetails.Extensions["stackTrace"] = context.Exception.ToString();
+        }
+    };
+});
+
 // Configure dependency settings
 var dependencyConfig = builder.Configuration.GetSection("Dependencies").Get<DependencyConfiguration>()
                       ?? new DependencyConfiguration();
@@ -79,6 +101,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Exception handling middleware - must be early in pipeline
+app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 // JWT Authentication middleware
 app.UseAuthentication();

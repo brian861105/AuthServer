@@ -1,5 +1,3 @@
-using AuthServer.Domain.Common;
-
 namespace AuthServer.Domain.Interfaces;
 
 public class AuthResponse
@@ -9,8 +7,8 @@ public class AuthResponse
 
 public interface IAuthService
 {
-    Task<Result<AuthResponse>> RegisterAsync(string email, string password);
-    Task<Result<AuthResponse>> LoginAsync(string email, string password);
-    Task<Result> ForgotPasswordAsync(string email);
-    Task<Result> ResetPasswordAsync(string token, string newPassword);
+    Task<AuthResponse> RegisterAsync(string email, string password);
+    Task<AuthResponse> LoginAsync(string email, string password);
+    Task ForgotPasswordAsync(string email);
+    Task ResetPasswordAsync(string token, string newPassword);
 }
