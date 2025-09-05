@@ -28,7 +28,11 @@
 - [x] 實作受保護的端點（需要認證）
 - [x] 添加用戶資料驗證（Email 格式、密碼強度）
 - [x] 完善錯誤處理和回應格式（已重構為例外處理 + Problem Details）
-- [ ] 添加 API 文檔（Swagger 優化）
+- [x] 添加 API 文檔（Swagger 優化）：
+  - [x] 配置 Swagger 和 JWT 認證支援
+  - [x] 添加詳細的 API 端點文檔和註解
+  - [x] 優化 DTOs 的 Swagger Schema 描述
+  - [x] 重構為標準 Clean Architecture 分層
 - [x] 添加健康檢查端點 `/health`
 
 ### Phase 2: EF Core 資料庫整合

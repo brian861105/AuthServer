@@ -17,7 +17,7 @@ public class AuthService : IAuthService
         _tokenService = tokenService;
     }
 
-    public async Task<AuthResponse> RegisterAsync(string email, string password)
+    public async Task<string> RegisterAsync(string email, string password)
     {
         // Validate email
         var emailValidation = _validationService.ValidateEmail(email);
@@ -45,10 +45,10 @@ public class AuthService : IAuthService
         await _userRepository.AddAsync(user);
 
         var token = _tokenService.GenerateToken(user);
-        return new AuthResponse { Token = token };
+        return token;
     }
 
-    public async Task<AuthResponse> LoginAsync(string email, string password)
+    public async Task<string> LoginAsync(string email, string password)
     {
         Console.WriteLine($"[DEBUG] LoginAsync - Attempting login for: {email}");
 
@@ -72,7 +72,7 @@ public class AuthService : IAuthService
         }
 
         var token = _tokenService.GenerateToken(user);
-        return new AuthResponse { Token = token };
+        return token;
     }
 
     public async Task ForgotPasswordAsync(string email)

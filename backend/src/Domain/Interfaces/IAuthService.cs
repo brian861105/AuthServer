@@ -1,14 +1,12 @@
 namespace AuthServer.Domain.Interfaces;
 
-public class AuthResponse
-{
-    public string Token { get; set; } = string.Empty;
-}
-
+/// <summary>
+/// Core authentication business logic
+/// </summary>
 public interface IAuthService
 {
-    Task<AuthResponse> RegisterAsync(string email, string password);
-    Task<AuthResponse> LoginAsync(string email, string password);
+    Task<string> RegisterAsync(string email, string password);
+    Task<string> LoginAsync(string email, string password);
     Task ForgotPasswordAsync(string email);
     Task ResetPasswordAsync(string token, string newPassword);
 }
