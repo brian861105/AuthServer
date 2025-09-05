@@ -1,0 +1,26 @@
+# Build results
+bin/
+obj/
+
+# Test results
+TestResults/
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# Visual Studio files
+.vs/
+*.vscode/
+
+# JetBrains Rider
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db

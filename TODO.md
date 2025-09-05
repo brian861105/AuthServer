@@ -6,16 +6,24 @@
 - [x] InMemoryUserRepository 實作
 - [x] Docker 容器化配置
 - [x] 基本單元測試框架
+- [x] 添加 JWT Token 生成和驗證 (`JwtTokenService`)
+- [x] 實作受保護的端點 JWT Token 驗證示範端點 (`/api/auth/validate-token`)
+- [x] 添加用戶資料驗證（Email 格式、密碼強度）
+- [x] 添加健康檢查端點 (`/health`)
+- [x] JWT 驗證集成測試
+- [x] 代碼格式化和 lint 檢查
+- [x] 測試覆蓋率收集和 HTML 報告生成
+- [x] 測試和 lint 腳本 (`test.sh`, `lint.sh`)
 
 ## 進行中 🚧
 
 ### Phase 1: 完善 InMemory 版本
-- [ ] 添加 JWT Token 生成和驗證
-- [ ] 實作受保護的端點（需要認證）
-- [ ] 添加用戶資料驗證（Email 格式、密碼強度）
+- [x] 添加 JWT Token 生成和驗證
+- [x] 實作受保護的端點（需要認證）
+- [x] 添加用戶資料驗證（Email 格式、密碼強度）
 - [ ] 完善錯誤處理和回應格式
 - [ ] 添加 API 文檔（Swagger 優化）
-- [ ] 添加健康檢查端點 `/health`
+- [x] 添加健康檢查端點 `/health`
 
 ### Phase 2: EF Core 資料庫整合
 - [ ] 設計 EF Core DbContext
@@ -49,9 +57,9 @@
 - [ ] 審計日誌（登入、密碼變更等重要操作）
 
 ### Phase 6: 測試完善
-- [ ] 完善單元測試覆蓋率
-- [ ] 添加整合測試
-- [ ] API 端點測試
+- [x] 完善單元測試覆蓋率（已有 HTML 覆蓋率報告）
+- [x] 添加整合測試（JWT 驗證測試）
+- [x] API 端點測試（AuthController 測試）
 - [ ] 效能測試
 - [ ] 安全性測試
 
@@ -61,6 +69,28 @@
 - [ ] Kubernetes 部署 YAML
 - [ ] 備份和還原策略
 - [ ] 監控和警報設定
+
+## 當前狀態 📊
+
+### 測試覆蓋率
+- **AuthServer.Infrastructure**: 73%
+  - `InMemoryUserRepository`: 63.8%
+  - `JwtTokenService`: 87%
+- **AuthServer.Domain.ValidationResult**: 77.7%
+
+### 可用腳本
+```bash
+./test.sh   # 運行測試並生成 HTML 覆蓋率報告
+./lint.sh   # 檢查代碼格式
+```
+
+### 已實現 API 端點
+- `POST /api/auth/register` - 用戶註冊
+- `POST /api/auth/login` - 用戶登入  
+- `POST /api/auth/forgot-password` - 忘記密碼
+- `POST /api/auth/reset-password` - 重設密碼
+- `GET /api/auth/validate-token` - JWT Token 驗證 (需要授權)
+- `GET /health` - 健康檢查
 
 ## 技術債務 📋
 - [ ] InMemoryUserRepository 使用反射設定 ID（將被 EF Core 取代）
