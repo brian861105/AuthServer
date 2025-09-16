@@ -14,6 +14,12 @@
 - [x] 代碼格式化和 lint 檢查
 - [x] 測試覆蓋率收集和 HTML 報告生成
 - [x] 測試和 lint 腳本 (`test.sh`, `lint.sh`)
+- [x] **重構錯誤處理機制**：
+  - [x] 移除 Result Pattern，改用例外處理
+  - [x] 添加 Problem Details 中介軟體
+  - [x] 簡化 Controller 錯誤處理邏輯
+  - [x] 統一錯誤回應格式（RFC 7807 標準）
+  - [x] 更新單元測試以適應新的例外處理機制
 
 ## 進行中 🚧
 
@@ -21,8 +27,12 @@
 - [x] 添加 JWT Token 生成和驗證
 - [x] 實作受保護的端點（需要認證）
 - [x] 添加用戶資料驗證（Email 格式、密碼強度）
-- [ ] 完善錯誤處理和回應格式
-- [ ] 添加 API 文檔（Swagger 優化）
+- [x] 完善錯誤處理和回應格式（已重構為例外處理 + Problem Details）
+- [x] 添加 API 文檔（Swagger 優化）：
+  - [x] 配置 Swagger 和 JWT 認證支援
+  - [x] 添加詳細的 API 端點文檔和註解
+  - [x] 優化 DTOs 的 Swagger Schema 描述
+  - [x] 重構為標準 Clean Architecture 分層
 - [x] 添加健康檢查端點 `/health`
 
 ### Phase 2: EF Core 資料庫整合
@@ -60,6 +70,11 @@
 - [x] 完善單元測試覆蓋率（已有 HTML 覆蓋率報告）
 - [x] 添加整合測試（JWT 驗證測試）
 - [x] API 端點測試（AuthController 測試）
+- [x] 更新單元測試以適應例外處理機制：
+  - [x] `AuthService` 測試按函數分組重新組織
+  - [x] 更新為使用 `Assert.ThrowsAsync<T>()` 測試例外
+  - [x] 涵蓋 `ArgumentException`, `InvalidOperationException`, `UnauthorizedAccessException`
+  - [x] 增加邊界條件和安全考量測試
 - [ ] 效能測試
 - [ ] 安全性測試
 
@@ -94,13 +109,15 @@
 
 ## 技術債務 📋
 - [ ] InMemoryUserRepository 使用反射設定 ID（將被 EF Core 取代）
-- [ ] 缺少適當的例外處理策略
+- [x] ~~缺少適當的例外處理策略~~（已重構為統一例外處理）
 - [ ] 密碼重設 Token 沒有過期時間
 - [ ] 缺少 API 版本控制
+- [x] ~~需要更新單元測試以適應新的例外處理機制~~（已完成）
 
 ## 架構決策記錄 📝
 - **資料存取**: 開發階段使用 InMemory，生產環境使用 EF Core + SQL Server
 - **認證方式**: JWT Token
+- **錯誤處理**: 例外處理 + Problem Details 中介軟體（RFC 7807 標準）
 - **容器化**: Docker + 未來支援 AOT 編譯
 - **測試策略**: NUnit + 整合測試
 - **日誌框架**: ASP.NET Core 內建 + 未來考慮 Serilog

@@ -1,16 +1,12 @@
-using AuthServer.Domain.Common;
-
 namespace AuthServer.Domain.Interfaces;
 
-public class AuthResponse
-{
-    public string Token { get; set; } = string.Empty;
-}
-
+/// <summary>
+/// Core authentication business logic
+/// </summary>
 public interface IAuthService
 {
-    Task<Result<AuthResponse>> RegisterAsync(string email, string password);
-    Task<Result<AuthResponse>> LoginAsync(string email, string password);
-    Task<Result> ForgotPasswordAsync(string email);
-    Task<Result> ResetPasswordAsync(string token, string newPassword);
+    Task<string> RegisterAsync(string email, string password);
+    Task<string> LoginAsync(string email, string password);
+    Task ForgotPasswordAsync(string email);
+    Task ResetPasswordAsync(string token, string newPassword);
 }
