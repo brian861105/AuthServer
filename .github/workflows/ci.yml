@@ -10,17 +10,14 @@ env:
   DOTNET_VERSION: '8.0.x'
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:8.0
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
     
     - name: Restore dependencies
       run: dotnet restore backend/AuthServer.sln
@@ -30,19 +27,20 @@ jobs:
     
     - name: Run tests
       run: dotnet test backend/AuthServer.sln --configuration Release --no-build --verbosity normal
+    
+    - name: Build Docker image
+      run: |
+        docker build -t authserver-api:latest ./backend
 
   lint:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/dotnet/sdk:8.0
     if: (github.event_name == 'pull_request' && github.base_ref == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
     
     - name: Install dotnet format
       run: dotnet tool install -g dotnet-format
