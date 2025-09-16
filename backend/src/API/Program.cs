@@ -5,6 +5,8 @@ using AuthServer.Infrastructure.Data;
 using AuthServer.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Extensions;
+using Swashbuckle.AspNetCore.Swagger;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,8 +25,8 @@ builder.Services.AddSwaggerGen(options =>
         Description = "A comprehensive authentication server API built with Clean Architecture principles",
         Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
-            Name = "AuthServer Team",
-            Email = "support@authserver.com"
+            Name = "Example Auth",
+            Email = "brian861105@gmail.com"
         },
         License = new Microsoft.OpenApi.Models.OpenApiLicense
         {
@@ -33,12 +35,16 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
+    // Custom operation filters for better documentation
+    options.EnableAnnotations();
+
+
     // Add JWT Authentication to Swagger
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-        Scheme = "Bearer",
+        Scheme = "bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by a space and your JWT token. Example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'"
@@ -58,13 +64,6 @@ builder.Services.AddSwaggerGen(options =>
             Array.Empty<string>()
         }
     });
-
-    // Include XML comments if available (we'll add this later)
-    // var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    // options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-    
-    // Custom operation filters for better documentation
-    options.EnableAnnotations();
 });
 
 builder.Services.AddHealthChecks();
@@ -97,9 +96,6 @@ var dependencyConfig = builder.Configuration.GetSection("Dependencies").Get<Depe
 
 // Register dependencies with configurable lifetime
 var userRepoLifetime = dependencyConfig.UserRepository.GetServiceLifetime();
-
-Console.WriteLine($"[CONFIG] UserRepository lifetime: {userRepoLifetime}");
-Console.WriteLine($"[CONFIG] Comment: {dependencyConfig.UserRepository.Comment}");
 
 switch (userRepoLifetime)
 {
@@ -152,6 +148,27 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+// Generate Swagger JSON to docs folder (only in Development)
+if (app.Environment.IsDevelopment())
+{
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var swaggerGenerator = scope.ServiceProvider.GetRequiredService<ISwaggerProvider>();
+        var swagger = swaggerGenerator.GetSwagger("v1");
+        var docsPath = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "docs");
+        Directory.CreateDirectory(docsPath);
+        var json = swagger.SerializeAsJson(Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0);
+        var filePath = Path.Combine(docsPath, "swagger.json");
+        await File.WriteAllTextAsync(filePath, json);
+        Console.WriteLine($"Swagger documentation generated: {filePath}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Failed to generate Swagger documentation: {ex.Message}");
+    }
 }
 
 app.UseHttpsRedirection();
