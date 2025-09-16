@@ -78,10 +78,10 @@ builder.Services.AddProblemDetails(configure =>
         {
             context.ProblemDetails.Extensions.Add("traceId", context.HttpContext.TraceIdentifier);
         }
-        
+
         // Set instance to the request path
         context.ProblemDetails.Instance = context.HttpContext.Request.Path;
-        
+
         // Include stack trace only in development environment
         if (builder.Environment.IsDevelopment() && context.Exception != null)
         {
